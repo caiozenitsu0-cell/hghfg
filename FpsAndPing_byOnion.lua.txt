@@ -1,0 +1,190 @@
+local shared = odh_shared_plugins
+local my_own_section = shared.AddSection("FPS & PING MONITOR")
+
+-- =============================
+--  TOGGLE BUTTON
+-- =============================
+local isEnabled = false
+
+my_own_section:AddToggle("toggle", function(bool)
+    isEnabled = bool
+    
+    if isEnabled then
+        --  Create GUI when enabled
+        createFpsPingGui()
+        shared.Notify("FPS & Ping Monitor enabled", 2)
+    else
+        --  Destroy GUI when disabled
+        if _G.FpsPingGui then
+            _G.FpsPingGui:Destroy()
+            _G.FpsPingGui = nil
+        end
+        shared.Notify("FPS & Ping Monitor disabled", 2)
+    end
+end)
+
+-- =============================
+--  CREDITS NOTE
+-- =============================
+my_own_section:AddParagraph("Credits:", "Made by @onion and DM me for bug")
+
+-- =============================
+--  FUNCTION TO CREATE GUI
+-- =============================
+function createFpsPingGui()
+    -- Destroy previous instance if exists
+    if _G.FpsPingGui then
+        _G.FpsPingGui:Destroy()
+    end
+    
+    repeat task.wait() until game:IsLoaded()
+    task.wait(0.5)
+
+    --  Initial transparent message
+    local LoadGui = Instance.new("ScreenGui")
+    LoadGui.Parent = game.CoreGui
+    LoadGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    local WaitLabel = Instance.new("TextLabel")
+    WaitLabel.Parent = LoadGui
+    WaitLabel.BackgroundTransparency = 1
+    WaitLabel.Size = UDim2.new(1, 0, 0, 50)
+    WaitLabel.Position = UDim2.new(0, 0, 0.45, 0)
+    WaitLabel.Font = Enum.Font.SourceSansBold
+    WaitLabel.Text = "FPS & Ping Monitor Loading..."
+    WaitLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    WaitLabel.TextScaled = true
+    WaitLabel.TextTransparency = 0.2
+
+    task.wait(2)
+    LoadGui:Destroy()
+
+    -- =============================
+    --  MAIN GUI
+    -- =============================
+    local ScreenGui = Instance.new("ScreenGui")
+    local Fps = Instance.new("TextLabel")
+    local Ping = Instance.new("TextLabel")
+
+    ScreenGui.Name = "FpsPingMonitor"
+    ScreenGui.Parent = game.CoreGui
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    
+    -- Store in global for easy access
+    _G.FpsPingGui = ScreenGui
+
+    -- =============================
+    --  FPS (improved position)
+    -- =============================
+    Fps.Name = "Fps"
+    Fps.Parent = ScreenGui
+    Fps.BackgroundTransparency = 1
+    Fps.Position = UDim2.new(0.790, 0, 0, 17)
+    Fps.Size = UDim2.new(0, 135, 0, 25)
+    Fps.Font = Enum.Font.SourceSans
+    Fps.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Fps.TextScaled = true
+    Fps.Text = "FPS: 0"
+
+    -- =============================
+    --  PING (improved position)
+    -- =============================
+    Ping.Name = "Ping"
+    Ping.Parent = ScreenGui
+    Ping.BackgroundTransparency = 1
+    Ping.Position = UDim2.new(0.700, 0, 0, 0)
+    Ping.Size = UDim2.new(0, 260, 0, 25)
+    Ping.Font = Enum.Font.SourceSans
+    Ping.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Ping.TextScaled = true
+    Ping.Text = "Ping : ???"
+
+    -- =============================
+    --  Services (I don't know why I put that.)
+    -- =============================
+    local RunService = game:GetService("RunService")
+    local Stats = game:GetService("Stats")
+    local StarterGui = game:GetService("StarterGui")
+
+    -- Variables
+    local lastFPS = 0
+    local lastPing = 0
+
+    -- =============================
+    --  Natural update
+    -- =============================
+    local connection = RunService.RenderStepped:Connect(function(frame)
+        -- Check if GUI still exists
+        if not _G.FpsPingGui or not _G.FpsPingGui.Parent then
+            connection:Disconnect()
+            return
+        end
+
+        -- Natural FPS
+        local fps = math.floor(1 / frame)
+        if fps ~= lastFPS then
+            lastFPS = fps
+            Fps.Text = "FPS: " .. fps
+        end
+
+        -- Real client ping
+        local pingValue = Stats.Network.ServerStatsItem["Data Ping"]:GetValueString()
+        local rawPing = tonumber(pingValue:match("%-?%d+")) or 0
+
+        -- Negative ping → 👁️
+        if rawPing < 0 then
+            Ping.Text = "Ping : " .. rawPing .. " 👁️"
+            return
+        end
+
+        if rawPing ~= lastPing then
+            lastPing = rawPing
+
+            local pingText = "Ping : " .. rawPing .. " "
+
+            -- 🧠 Reactions based on ping
+            if rawPing <= 3 then
+                pingText = pingText .. "🤯😱🫣"
+            elseif rawPing <= 10 then
+                pingText = pingText .. "😳"
+            elseif rawPing <= 30 then
+                pingText = pingText .. "🤩😍"
+            elseif rawPing <= 70 then
+                pingText = pingText .. "😎"
+            elseif rawPing <= 140 then
+                pingText = pingText .. "✅"
+            elseif rawPing <= 210 then
+                pingText = pingText .. "⤴️"
+            elseif rawPing <= 300 then
+                pingText = pingText .. "💔"
+            elseif rawPing <= 400 then
+                pingText = pingText .. "🥶"
+            elseif rawPing <= 500 then
+                pingText = pingText .. "🚨"
+            elseif rawPing <= 600 then
+                pingText = pingText .. "💀"
+            elseif rawPing <= 700 then
+                pingText = pingText .. "☠️"
+            elseif rawPing <= 1000 then
+                pingText = pingText .. "⚠️"
+            elseif rawPing <= 5000 then
+                pingText = pingText .. "❌❌❌"
+            elseif rawPing <= 20000 then
+                pingText = pingText .. "☢️☣️!!"
+            else
+                pingText = pingText .. "🔥💀 Your internet is burning 💀🔥"
+            end
+
+            Ping.Text = pingText
+
+            -- Notification if ping is high
+            if rawPing >= 500 then
+                StarterGui:SetCore("SendNotification", {
+                    Title = "⚠️ High Ping",
+                    Text = pingText,
+                    Duration = 2
+                })
+            end
+        end
+    end)
+end
